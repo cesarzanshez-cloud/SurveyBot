@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">SurveyBot</string>
+    <string name="accessibility_description">SurveyBot necesita acceso de accesibilidad para leer las preguntas y completar encuestas automáticamente con inteligencia artificial.</string>
+</resources>
