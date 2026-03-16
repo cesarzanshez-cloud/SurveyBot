@@ -1,6 +1,10 @@
 package com.surveybot
 
 import android.accessibilityservice.AccessibilityService
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -15,6 +19,44 @@ class SurveyAccessibilityService : AccessibilityService() {
     private var isProcessing = false
     private var lastScreenContent = ""
     private val handler = Handler(Looper.getMainLooper())
+
+    override fun onServiceConnected() {
+        super.onServiceConnected()
+        showPersistentNotification()
+        handler.post {
+            Toast.makeText(applicationContext, "✅ SurveyBot activo y escuchando", Toast.LENGTH_LONG).show()
+        }
+    }
+
+    private fun showPersistentNotification() {
+        val channelId = "surveybot_channel"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                channelId,
+                "SurveyBot",
+                NotificationManager.IMPORTANCE_LOW
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager.createNotificationChannel(channel)
+        }
+
+        val notification = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Notification.Builder(this, channelId)
+                .setContentTitle("SurveyBot activo")
+                .setContentText("Listo para llenar encuestas automáticamente")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .build()
+        } else {
+            Notification.Builder(this)
+                .setContentTitle("SurveyBot activo")
+                .setContentText("Listo para llenar encuestas automáticamente")
+                .setSmallIcon(android.R.drawable.ic_dialog_info)
+                .build()
+        }
+
+        val manager = getSystemService(NotificationManager::class.java)
+        manager.notify(1, notification)
+    }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         if (event == null || isProcessing) return
@@ -74,7 +116,7 @@ class SurveyAccessibilityService : AccessibilityService() {
 
         if (action == null) {
             withContext(Dispatchers.Main) {
-                Toast.makeText(applicationContext, "⚠️ Sin respuesta de IA - verifica API Key", Toast.LENGTH_LONG).show()
+                Toast.makeText(applicationContext, "⚠️ Sin respuesta de IA", Toast.LENGTH_LONG).show()
             }
             return
         }
