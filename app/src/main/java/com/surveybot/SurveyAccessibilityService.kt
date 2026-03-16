@@ -7,6 +7,7 @@ import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import kotlinx.coroutines.*
+import android.widget.Toast
 
 class SurveyAccessibilityService : AccessibilityService() {
 
@@ -68,10 +69,17 @@ class SurveyAccessibilityService : AccessibilityService() {
 
         val action = ClaudeApiClient.analyze(apiKey, profile, content) ?: return
 
-        withContext(Dispatchers.Main) {
-            handler.postDelayed({ executeAction(action) }, 900)
-        }
+     val action = ClaudeApiClient.analyze(apiKey, profile, content) ?: run {
+    withContext(Dispatchers.Main) {
+        Toast.makeText(applicationContext, "⚠️ Sin respuesta de IA", Toast.LENGTH_SHORT).show()
     }
+    return
+}
+
+withContext(Dispatchers.Main) {
+    Toast.makeText(applicationContext, "🤖 Acción: ${action.type} → ${action.target} ${action.value}", Toast.LENGTH_LONG).show()
+    handler.postDelayed({ executeAction(action) }, 900)
+}
 
     private fun executeAction(action: ActionResponse) {
         val root = rootInActiveWindow ?: return
