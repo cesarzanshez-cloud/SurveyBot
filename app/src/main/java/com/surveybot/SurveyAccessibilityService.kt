@@ -6,8 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import kotlinx.coroutines.*
 import android.widget.Toast
+import kotlinx.coroutines.*
 
 class SurveyAccessibilityService : AccessibilityService() {
 
@@ -63,23 +63,27 @@ class SurveyAccessibilityService : AccessibilityService() {
 
         if (apiKey.isBlank()) return
 
-        // Don't process the SurveyBot app itself
         val root = rootInActiveWindow ?: return
         if (root.packageName?.toString()?.contains("surveybot") == true) return
 
-        val action = ClaudeApiClient.analyze(apiKey, profile, content) ?: return
+        withContext(Dispatchers.Main) {
+            Toast.makeText(applicationContext, "🔍 Analizando pantalla...", Toast.LENGTH_SHORT).show()
+        }
 
-     val action = ClaudeApiClient.analyze(apiKey, profile, content) ?: run {
-    withContext(Dispatchers.Main) {
-        Toast.makeText(applicationContext, "⚠️ Sin respuesta de IA", Toast.LENGTH_SHORT).show()
+        val action = ClaudeApiClient.analyze(apiKey, profile, content)
+
+        if (action == null) {
+            withContext(Dispatchers.Main) {
+                Toast.makeText(applicationContext, "⚠️ Sin respuesta de IA - verifica API Key", Toast.LENGTH_LONG).show()
+            }
+            return
+        }
+
+        withContext(Dispatchers.Main) {
+            Toast.makeText(applicationContext, "🤖 ${action.type}: ${action.target} ${action.value}", Toast.LENGTH_LONG).show()
+            handler.postDelayed({ executeAction(action) }, 900)
+        }
     }
-    return
-}
-
-withContext(Dispatchers.Main) {
-    Toast.makeText(applicationContext, "🤖 Acción: ${action.type} → ${action.target} ${action.value}", Toast.LENGTH_LONG).show()
-    handler.postDelayed({ executeAction(action) }, 900)
-}
 
     private fun executeAction(action: ActionResponse) {
         val root = rootInActiveWindow ?: return
@@ -102,7 +106,6 @@ withContext(Dispatchers.Main) {
                     node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
                     handler.postDelayed({ clickNextButton(root) }, 700)
                 } else {
-                    // Try clicking closest match
                     clickNextButton(root)
                 }
             }
